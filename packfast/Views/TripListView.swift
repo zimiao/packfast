@@ -25,6 +25,11 @@ struct TripListView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("PackFast")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         newTripName = ""

@@ -18,6 +18,9 @@ struct TripDetailView: View {
     @State private var filterGroup: String?
     /// Location filter. Nil = All.
     @State private var filterLocation: String?
+    /// When true, hide items that are already checked (packed).
+    @State private var hidePackedItems: Bool = false
+
     private var filteredItems: [Item] {
         var items = trip.items
         if let g = filterGroup, !g.isEmpty {
@@ -25,6 +28,9 @@ struct TripDetailView: View {
         }
         if let loc = filterLocation, !loc.isEmpty {
             items = items.filter { $0.location == loc }
+        }
+        if hidePackedItems {
+            items = items.filter { !$0.isPacked }
         }
         return items
     }
@@ -82,6 +88,14 @@ struct TripDetailView: View {
                         .font(.title2)
                 }
                 .buttonStyle(.borderless)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Toggle("Hide checked items", isOn: $hidePackedItems)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title2)
+                }
             }
         }
         .sheet(isPresented: $showingAddItem) {

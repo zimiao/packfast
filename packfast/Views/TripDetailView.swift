@@ -166,19 +166,26 @@ struct TripDetailView: View {
     }
 
     private var groupFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                GroupFilterChip(title: "All", isSelected: filterGroup == nil) {
-                    filterGroup = nil
-                }
-                ForEach(groupsInTrip, id: \.self) { groupName in
-                    GroupFilterChip(title: groupName, isSelected: filterGroup == groupName) {
-                        filterGroup = groupName
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Pack time")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    GroupFilterChip(title: "All", isSelected: filterGroup == nil) {
+                        filterGroup = nil
+                    }
+                    ForEach(groupsInTrip, id: \.self) { groupName in
+                        GroupFilterChip(title: groupName, isSelected: filterGroup == groupName) {
+                            filterGroup = groupName
+                        }
                     }
                 }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
         }
         .background(Color(.tertiarySystemGroupedBackground))
     }
@@ -214,16 +221,6 @@ struct TripDetailView: View {
                         .frame(width: 44)
                     
                     HStack(spacing: 8) {
-                        if !item.group.isEmpty {
-                            Text(item.group)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(.tertiarySystemFill))
-                                .clipShape(Capsule())
-                        }
                         Text(item.name)
                             .strikethrough(item.isPacked, color: .secondary)
                             .foregroundStyle(item.isPacked ? .secondary : .primary)

@@ -15,7 +15,7 @@ enum OptionType {
         switch self {
         case .category: return "Categories"
         case .location: return "Locations"
-        case .group: return "Groups"
+        case .group: return "Pack times"
         }
     }
 
@@ -23,7 +23,7 @@ enum OptionType {
         switch self {
         case .category: return "Category"
         case .location: return "Location"
-        case .group: return "Group"
+        case .group: return "Pack time"
         }
     }
 }
@@ -190,9 +190,9 @@ struct ManageOptionsView: View {
         List {
             if groups.isEmpty {
                 ContentUnavailableView {
-                    Label("No groups", systemImage: "person.2")
+                    Label("No pack times", systemImage: "clock")
                 } description: {
-                    Text("Tap Add to create one.")
+                    Text("Tap Add to create one (e.g. Next morning, Day before).")
                 }
             } else {
                 ForEach(groups, id: \.id) { group in

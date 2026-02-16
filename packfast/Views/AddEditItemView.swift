@@ -90,22 +90,22 @@ struct AddEditItemView: View {
                 }
 
                 Section {
-                    Picker("Group (optional)", selection: $selectedGroup) {
-                        Text("None").tag("")
+                    Picker("Pack time", selection: $selectedGroup) {
+                        Text("Select").tag("")
                         ForEach(groupOptions, id: \.self) { name in
                             Text(name).tag(name)
                         }
                     }
                     .pickerStyle(.menu)
-                    Button("Add new group...") {
+                    Button("Add new pack time...") {
                         newGroupName = ""
                         showAddGroupAlert = true
                     }
                     .foregroundStyle(.tint)
                 } header: {
-                    Text("Group")
+                    Text("Pack time")
                 } footer: {
-                    Text("Use groups to split by person or sub-type (e.g. Flora's clothes, Clara's clothes) within a category.")
+                    Text("When will you pack this? e.g. Next morning, Day before, or well in advance.")
                 }
             }
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
@@ -163,8 +163,8 @@ struct AddEditItemView: View {
             } message: {
                 Text("Add a custom location (e.g. a room). It will be available for future items.")
             }
-            .alert("New Group", isPresented: $showAddGroupAlert) {
-                TextField("Group name", text: $newGroupName)
+            .alert("New Pack time", isPresented: $showAddGroupAlert) {
+                TextField("Pack time name", text: $newGroupName)
                     .textInputAutocapitalization(.words)
                 Button("Cancel", role: .cancel) {
                     newGroupName = ""
@@ -174,7 +174,7 @@ struct AddEditItemView: View {
                 }
                 .disabled(newGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } message: {
-                Text("e.g. Flora, Clara, Mine. Use for tiered categories like \"Clothes – Flora\".")
+                Text("e.g. Next morning, Day before, Week before.")
             }
         }
     }
@@ -183,6 +183,7 @@ struct AddEditItemView: View {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !selectedCategory.isEmpty
             && !selectedLocation.isEmpty
+            && !selectedGroup.isEmpty
     }
 
     private func addNewCategory() {
@@ -223,7 +224,7 @@ struct AddEditItemView: View {
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty, !selectedCategory.isEmpty, !selectedLocation.isEmpty else { return }
+        guard !trimmedName.isEmpty, !selectedCategory.isEmpty, !selectedLocation.isEmpty, !selectedGroup.isEmpty else { return }
 
         onDismiss()
         Task { @MainActor in

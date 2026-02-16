@@ -23,12 +23,12 @@ struct SettingsView: View {
                 NavigationLink {
                     ManageOptionsView(optionType: .group)
                 } label: {
-                    Label("Manage Groups", systemImage: "person.2")
+                    Label("Manage Pack times", systemImage: "clock")
                 }
             } header: {
                 Text("Packing Options")
             } footer: {
-                Text("Add, rename, or remove categories, locations, and groups used when adding items to trips.")
+                Text("Add, rename, or remove categories, locations, and pack times used when adding items to trips.")
             }
         }
         .navigationTitle("Settings")

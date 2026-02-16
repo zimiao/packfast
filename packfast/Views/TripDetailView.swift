@@ -247,6 +247,13 @@ struct TripDetailView: View {
             .padding(.leading, 12)
         }
         .background(Color(.secondarySystemGroupedBackground))
+        .contextMenu {
+            Button {
+                duplicateItem(item)
+            } label: {
+                Label("Duplicate", systemImage: "doc.on.doc")
+            }
+        }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 deleteItem(item)
@@ -254,6 +261,21 @@ struct TripDetailView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    private func duplicateItem(_ item: Item) {
+        let copy = Item(
+            name: "Copy of \(item.name)",
+            category: item.category,
+            location: item.location,
+            group: item.group,
+            isPacked: false,
+            trip: trip
+        )
+        modelContext.insert(copy)
+        trip.items.append(copy)
+        try? modelContext.save()
+        itemToEdit = copy
     }
 
     private func togglePacked(_ item: Item) {

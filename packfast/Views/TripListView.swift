@@ -143,6 +143,7 @@ struct TripListView: View {
                     category: item.category,
                     location: item.location,
                     group: item.group,
+                    container: item.container,
                     isPacked: false,
                     trip: trip
                 )
@@ -164,6 +165,7 @@ struct TripListView: View {
                 category: item.category,
                 location: item.location,
                 group: item.group,
+                container: item.container,
                 isPacked: false,
                 trip: newTrip
             )

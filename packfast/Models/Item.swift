@@ -14,6 +14,8 @@ final class Item: Identifiable {
     var location: String
     /// Optional sub-group (e.g. "Flora", "Clara", "Mine") for tiered categories like "Clothes – Flora".
     var group: String
+    /// Optional container/bag to put this item in (e.g. "my toiletries bag", "makeup bag").
+    var container: String
     var isPacked: Bool
     var trip: Trip?
 
@@ -23,6 +25,7 @@ final class Item: Identifiable {
         category: String,
         location: String,
         group: String = "",
+        container: String = "",
         isPacked: Bool = false,
         trip: Trip? = nil
     ) {
@@ -31,6 +34,7 @@ final class Item: Identifiable {
         self.category = category
         self.location = location
         self.group = group
+        self.container = container
         self.isPacked = isPacked
         self.trip = trip
     }

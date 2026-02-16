@@ -19,6 +19,7 @@ struct AddEditItemView: View {
     @State private var selectedCategory: String = ""
     @State private var selectedLocation: String = ""
     @State private var selectedGroup: String = ""
+    @State private var container: String = ""
     @State private var showAddCategoryAlert = false
     @State private var showAddLocationAlert = false
     @State private var showAddGroupAlert = false
@@ -106,6 +107,14 @@ struct AddEditItemView: View {
                 } footer: {
                     Text("When will you pack this? e.g. Next morning, Day before, or well in advance.")
                 }
+
+                Section {
+                    TextField("e.g. my toiletries bag, makeup bag", text: $container)
+                } header: {
+                    Text("Where to put it")
+                } footer: {
+                    Text("Optional. The bag or container this item goes into.")
+                }
             }
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
             .navigationBarTitleDisplayMode(.inline)
@@ -129,11 +138,13 @@ struct AddEditItemView: View {
                     selectedCategory = item.category
                     selectedLocation = item.location
                     selectedGroup = item.group
+                    container = item.container
                 } else {
                     // Don't auto-select - let user choose or add their own
                     selectedCategory = ""
                     selectedLocation = ""
                     selectedGroup = ""
+                    container = ""
                 }
             }
             .alert("New Category", isPresented: $showAddCategoryAlert) {
@@ -229,12 +240,14 @@ struct AddEditItemView: View {
                 existing.category = selectedCategory
                 existing.location = selectedLocation
                 existing.group = selectedGroup
+                existing.container = container.trimmingCharacters(in: .whitespacesAndNewlines)
             } else {
                 let newItem = Item(
                     name: trimmedName,
                     category: selectedCategory,
                     location: selectedLocation,
                     group: selectedGroup,
+                    container: container.trimmingCharacters(in: .whitespacesAndNewlines),
                     isPacked: false,
                     trip: trip
                 )

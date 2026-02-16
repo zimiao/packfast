@@ -31,9 +31,21 @@ struct AddEditItemView: View {
     @State private var addedGroupNames: [String] = []
 
     private var isEditing: Bool { item != nil }
-    private var categoryOptions: [String] { categories.map(\.name) + addedCategoryNames }
-    private var locationOptions: [String] { locations.map(\.name) + addedLocationNames }
-    private var groupOptions: [String] { groups.map(\.name) + addedGroupNames }
+    private var categoryOptions: [String] {
+        let existingNames = Set(categories.map(\.name))
+        let newNames = addedCategoryNames.filter { !existingNames.contains($0) }
+        return categories.map(\.name) + newNames
+    }
+    private var locationOptions: [String] {
+        let existingNames = Set(locations.map(\.name))
+        let newNames = addedLocationNames.filter { !existingNames.contains($0) }
+        return locations.map(\.name) + newNames
+    }
+    private var groupOptions: [String] {
+        let existingNames = Set(groups.map(\.name))
+        let newNames = addedGroupNames.filter { !existingNames.contains($0) }
+        return groups.map(\.name) + newNames
+    }
 
     var body: some View {
         NavigationStack {
@@ -119,8 +131,9 @@ struct AddEditItemView: View {
                     selectedLocation = item.location
                     selectedGroup = item.group
                 } else {
-                    selectedCategory = categoryOptions.first ?? ""
-                    selectedLocation = locationOptions.first ?? ""
+                    // Don't auto-select - let user choose or add their own
+                    selectedCategory = ""
+                    selectedLocation = ""
                     selectedGroup = ""
                 }
             }

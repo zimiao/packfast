@@ -113,6 +113,8 @@ struct TripDetailView: View {
                 showingAddItem = true
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .font(.title3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -191,7 +193,45 @@ struct TripDetailView: View {
     }
 
     private func itemRow(_ item: Item) -> some View {
-        HStack(spacing: 12) {
+        ZStack(alignment: .leading) {
+            // Clickable row background
+            Button {
+                itemToEdit = item
+                Task { @MainActor in
+                    showingAddItem = true
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    // Spacer for the circle button
+                    Color.clear
+                        .frame(width: 44)
+                    
+                    HStack(spacing: 8) {
+                        if !item.group.isEmpty {
+                            Text(item.group)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color(.tertiarySystemFill))
+                                .clipShape(Capsule())
+                        }
+                        Text(item.name)
+                            .strikethrough(item.isPacked, color: .secondary)
+                            .foregroundStyle(item.isPacked ? .secondary : .primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            
+            // Circle button overlay
             Button {
                 togglePacked(item)
             } label: {
@@ -200,37 +240,8 @@ struct TripDetailView: View {
                     .foregroundStyle(item.isPacked ? Color.green : Color.secondary)
             }
             .buttonStyle(.plain)
-
-            Button {
-                itemToEdit = item
-                Task { @MainActor in
-                    showingAddItem = true
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    if !item.group.isEmpty {
-                        Text(item.group)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(.tertiarySystemFill))
-                            .clipShape(Capsule())
-                    }
-                    Text(item.name)
-                        .strikethrough(item.isPacked, color: .secondary)
-                        .foregroundStyle(item.isPacked ? .secondary : .primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            .buttonStyle(.plain)
+            .padding(.leading, 12)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
         .background(Color(.secondarySystemGroupedBackground))
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {

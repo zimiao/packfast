@@ -39,9 +39,6 @@ struct TripListView: View {
             .sheet(isPresented: $showingNewTrip) {
                 newTripSheet
             }
-            .task {
-                DataSeeder.seedIfNeeded(modelContext: modelContext)
-            }
         }
     }
 
@@ -57,6 +54,8 @@ struct TripListView: View {
                 showingNewTrip = true
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .font(.title3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

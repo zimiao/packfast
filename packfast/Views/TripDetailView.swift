@@ -92,11 +92,21 @@ struct TripDetailView: View {
         .sheet(isPresented: $showingAddItem) {
             AddEditItemView(
                 trip: trip,
-                item: itemToEdit,
+                item: nil,
                 categories: categories,
                 locations: locations,
                 onDismiss: {
                     showingAddItem = false
+                }
+            )
+        }
+        .sheet(item: $itemToEdit) { item in
+            AddEditItemView(
+                trip: trip,
+                item: item,
+                categories: categories,
+                locations: locations,
+                onDismiss: {
                     itemToEdit = nil
                 }
             )
@@ -197,9 +207,6 @@ struct TripDetailView: View {
             // Clickable row background
             Button {
                 itemToEdit = item
-                Task { @MainActor in
-                    showingAddItem = true
-                }
             } label: {
                 HStack(spacing: 12) {
                     // Spacer for the circle button

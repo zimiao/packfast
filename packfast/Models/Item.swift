@@ -17,6 +17,8 @@ final class Item: Identifiable {
     /// Optional container/bag to put this item in (e.g. "my toiletries bag", "makeup bag").
     var container: String
     var isPacked: Bool
+    /// When true, item is "optional" for this trip (decided later, e.g. swipe to mark).
+    var isOptional: Bool
     var trip: Trip?
 
     init(
@@ -27,6 +29,7 @@ final class Item: Identifiable {
         group: String = "",
         container: String = "",
         isPacked: Bool = false,
+        isOptional: Bool = false,
         trip: Trip? = nil
     ) {
         self.id = id
@@ -36,6 +39,7 @@ final class Item: Identifiable {
         self.group = group
         self.container = container
         self.isPacked = isPacked
+        self.isOptional = isOptional
         self.trip = trip
     }
 }

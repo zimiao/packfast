@@ -145,6 +145,7 @@ struct TripListView: View {
                     group: item.group,
                     container: item.container,
                     isPacked: false,
+                    isOptional: item.isOptional,
                     trip: trip
                 )
                 modelContext.insert(copy)
@@ -167,6 +168,7 @@ struct TripListView: View {
                 group: item.group,
                 container: item.container,
                 isPacked: false,
+                isOptional: item.isOptional,
                 trip: newTrip
             )
             modelContext.insert(copy)

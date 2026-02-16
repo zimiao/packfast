@@ -207,6 +207,7 @@ struct AddEditItemView: View {
                     group: selectedGroup,
                     container: container.trimmingCharacters(in: .whitespacesAndNewlines),
                     isPacked: false,
+                    isOptional: false,
                     trip: trip
                 )
                 modelContext.insert(newItem)

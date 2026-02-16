@@ -36,12 +36,10 @@ struct TripDetailView: View {
         Dictionary(grouping: filteredItems) { $0.category }
     }
 
-    /// Groups that appear in this trip (for filter chips).
+    /// Pack time presets that appear in this trip (for filter chips), in fixed order.
     private var groupsInTrip: [String] {
-        let names = Set(trip.items.compactMap { item in
-            item.group.isEmpty ? nil : item.group
-        })
-        return names.sorted()
+        let inTrip = Set(trip.items.map(\.group))
+        return Item.packTimeOptions.filter { inTrip.contains($0) }
     }
 
     /// Sections ordered: unpacked first, then packed (within each group).

@@ -8,7 +8,6 @@ import SwiftData
 
 struct AddEditItemView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \PackingGroup.sortOrder) private var groups: [PackingGroup]
     var trip: Trip
     var item: Item?
     var categories: [PackingCategory]
@@ -18,18 +17,15 @@ struct AddEditItemView: View {
     @State private var name: String = ""
     @State private var selectedCategory: String = ""
     @State private var selectedLocation: String = ""
-    @State private var selectedGroup: String = ""
+    @State private var selectedGroup: String = Item.packTimeOptions[0]
     @State private var container: String = ""
     @State private var showAddCategoryAlert = false
     @State private var showAddLocationAlert = false
-    @State private var showAddGroupAlert = false
     @State private var newCategoryName = ""
     @State private var newLocationName = ""
-    @State private var newGroupName = ""
     /// New options added this session so pickers update without re-querying.
     @State private var addedCategoryNames: [String] = []
     @State private var addedLocationNames: [String] = []
-    @State private var addedGroupNames: [String] = []
 
     private var isEditing: Bool { item != nil }
     private var categoryOptions: [String] {
@@ -41,11 +37,6 @@ struct AddEditItemView: View {
         let existingNames = Set(locations.map(\.name))
         let newNames = addedLocationNames.filter { !existingNames.contains($0) }
         return locations.map(\.name) + newNames
-    }
-    private var groupOptions: [String] {
-        let existingNames = Set(groups.map(\.name))
-        let newNames = addedGroupNames.filter { !existingNames.contains($0) }
-        return groups.map(\.name) + newNames
     }
 
     var body: some View {
@@ -91,21 +82,13 @@ struct AddEditItemView: View {
 
                 Section {
                     Picker("Pack time", selection: $selectedGroup) {
-                        Text("Select").tag("")
-                        ForEach(groupOptions, id: \.self) { name in
+                        ForEach(Item.packTimeOptions, id: \.self) { name in
                             Text(name).tag(name)
                         }
                     }
                     .pickerStyle(.menu)
-                    Button("Add new pack time...") {
-                        newGroupName = ""
-                        showAddGroupAlert = true
-                    }
-                    .foregroundStyle(.tint)
                 } header: {
                     Text("Pack time")
-                } footer: {
-                    Text("When will you pack this? e.g. Next morning, Day before, or well in advance.")
                 }
 
                 Section {
@@ -137,13 +120,12 @@ struct AddEditItemView: View {
                     name = item.name
                     selectedCategory = item.category
                     selectedLocation = item.location
-                    selectedGroup = item.group
+                    selectedGroup = Item.packTimeOptions.contains(item.group) ? item.group : Item.packTimeOptions[0]
                     container = item.container
                 } else {
-                    // Don't auto-select - let user choose or add their own
                     selectedCategory = ""
                     selectedLocation = ""
-                    selectedGroup = ""
+                    selectedGroup = Item.packTimeOptions[0]
                     container = ""
                 }
             }
@@ -171,18 +153,6 @@ struct AddEditItemView: View {
             } message: {
                 Text("Add a custom location (e.g. a room). It will be available for future items.")
             }
-            .alert("New Pack time", isPresented: $showAddGroupAlert) {
-                TextField("Pack time name", text: $newGroupName)
-                Button("Cancel", role: .cancel) {
-                    newGroupName = ""
-                }
-                Button("Add") {
-                    addNewGroup()
-                }
-                .disabled(newGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } message: {
-                Text("e.g. Next morning, Day before, Week before.")
-            }
         }
     }
 
@@ -190,7 +160,7 @@ struct AddEditItemView: View {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !selectedCategory.isEmpty
             && !selectedLocation.isEmpty
-            && !selectedGroup.isEmpty
+            && Item.packTimeOptions.contains(selectedGroup)
     }
 
     private func addNewCategory() {
@@ -217,21 +187,9 @@ struct AddEditItemView: View {
         newLocationName = ""
     }
 
-    private func addNewGroup() {
-        let trimmed = newGroupName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let maxOrder = groups.map(\.sortOrder).max() ?? -1
-        let newGroup = PackingGroup(name: trimmed, sortOrder: maxOrder + 1)
-        modelContext.insert(newGroup)
-        try? modelContext.save()
-        if !addedGroupNames.contains(trimmed) { addedGroupNames.append(trimmed) }
-        selectedGroup = trimmed
-        newGroupName = ""
-    }
-
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty, !selectedCategory.isEmpty, !selectedLocation.isEmpty, !selectedGroup.isEmpty else { return }
+        guard !trimmedName.isEmpty, !selectedCategory.isEmpty, !selectedLocation.isEmpty, Item.packTimeOptions.contains(selectedGroup) else { return }
 
         onDismiss()
         Task { @MainActor in

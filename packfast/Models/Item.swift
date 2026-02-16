@@ -12,7 +12,7 @@ final class Item: Identifiable {
     var name: String
     var category: String
     var location: String
-    /// Optional sub-group (e.g. "Flora", "Clara", "Mine") for tiered categories like "Clothes – Flora".
+    /// Pack time: one of Item.packTimeOptions (e.g. "🌙 Night before", "☀️ Morning").
     var group: String
     /// Optional container/bag to put this item in (e.g. "my toiletries bag", "makeup bag").
     var container: String
@@ -38,4 +38,9 @@ final class Item: Identifiable {
         self.isPacked = isPacked
         self.trip = trip
     }
+}
+
+extension Item {
+    /// Preset pack time options shown in the app (no custom entries).
+    static let packTimeOptions: [String] = ["🌙 Night before", "☀️ Morning of travel"]
 }

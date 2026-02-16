@@ -20,15 +20,10 @@ struct SettingsView: View {
                 } label: {
                     Label("Manage Locations", systemImage: "map")
                 }
-                NavigationLink {
-                    ManageOptionsView(optionType: .group)
-                } label: {
-                    Label("Manage Pack times", systemImage: "clock")
-                }
             } header: {
                 Text("Packing Options")
             } footer: {
-                Text("Add, rename, or remove categories, locations, and pack times used when adding items to trips.")
+                Text("Add, rename, or remove categories and locations used when adding items to trips. Pack time is always Night before or Morning.")
             }
         }
         .navigationTitle("Settings")

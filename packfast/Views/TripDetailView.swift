@@ -6,18 +6,12 @@
 import SwiftUI
 import SwiftData
 
-enum TripDetailViewMode: String, CaseIterable {
-    case byLocation = "By Location"
-    case byCategory = "By Category"
-}
-
 struct TripDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var trip: Trip
     @Query(sort: \PackingCategory.sortOrder) private var categories: [PackingCategory]
     @Query(sort: \PackingLocation.sortOrder) private var locations: [PackingLocation]
 
-    @State private var viewMode: TripDetailViewMode = .byLocation
     @State private var showingAddItem = false
     @State private var itemToEdit: Item?
     /// When set, only items in this group are shown. Nil = show all.
@@ -28,38 +22,54 @@ struct TripDetailView: View {
         return trip.items.filter { $0.group == g }
     }
 
-    private var itemsByLocation: [String: [Item]] {
-        Dictionary(grouping: filteredItems) { $0.location }
-    }
-
-    private var itemsByCategory: [String: [Item]] {
-        Dictionary(grouping: filteredItems) { $0.category }
+    /// First tier: category. Second tier: location. Pack time is the filter (chips).
+    private var categoryThenLocationSections: [(category: String, locationGroups: [(location: String, items: [Item])])] {
+        let byCategory = Dictionary(grouping: filteredItems) { $0.category }
+        let categoryOrder = categories.map(\.name).filter { byCategory[$0] != nil }
+        var result: [(category: String, locationGroups: [(location: String, items: [Item])])] = []
+        for cat in categoryOrder {
+            guard let catItems = byCategory[cat] else { continue }
+            let byLocation = Dictionary(grouping: catItems) { $0.location }
+            let locationOrder = locations.map(\.name).filter { byLocation[$0] != nil }
+            var groups: [(location: String, items: [Item])] = []
+            for loc in locationOrder {
+                guard var items = byLocation[loc] else { continue }
+                items.sort { !$0.isPacked && $1.isPacked }
+                groups.append((loc, items))
+            }
+            let otherLocs = Set(byLocation.keys).subtracting(locationOrder)
+            for loc in otherLocs.sorted() {
+                guard var items = byLocation[loc] else { continue }
+                items.sort { !$0.isPacked && $1.isPacked }
+                groups.append((loc, items))
+            }
+            result.append((cat, groups))
+        }
+        let otherCats = Set(byCategory.keys).subtracting(categoryOrder)
+        for cat in otherCats.sorted() {
+            guard let catItems = byCategory[cat] else { continue }
+            let byLocation = Dictionary(grouping: catItems) { $0.location }
+            let locationOrder = locations.map(\.name).filter { byLocation[$0] != nil }
+            var groups: [(location: String, items: [Item])] = []
+            for loc in locationOrder {
+                guard var items = byLocation[loc] else { continue }
+                items.sort { !$0.isPacked && $1.isPacked }
+                groups.append((loc, items))
+            }
+            for loc in Set(byLocation.keys).subtracting(locationOrder).sorted() {
+                guard var items = byLocation[loc] else { continue }
+                items.sort { !$0.isPacked && $1.isPacked }
+                groups.append((loc, items))
+            }
+            result.append((cat, groups))
+        }
+        return result
     }
 
     /// Pack time presets that appear in this trip (for filter chips), in fixed order.
     private var groupsInTrip: [String] {
         let inTrip = Set(trip.items.map(\.group))
         return Item.packTimeOptions.filter { inTrip.contains($0) }
-    }
-
-    /// Sections ordered: unpacked first, then packed (within each group).
-    private func sectionedItems(by keyPath: KeyPath<Item, String>, source: [String: [Item]]) -> [(String, [Item])] {
-        let keys = keyPath == \Item.location
-            ? locations.map(\.name).filter { source[$0] != nil }
-            : categories.map(\.name).filter { source[$0] != nil }
-        var result: [(String, [Item])] = []
-        for key in keys {
-            guard var list = source[key] else { continue }
-            list.sort { !$0.isPacked && $1.isPacked }
-            result.append((key, list))
-        }
-        let otherKeys = Set(source.keys).subtracting(keys)
-        for key in otherKeys.sorted() {
-            guard var list = source[key] else { continue }
-            list.sort { !$0.isPacked && $1.isPacked }
-            result.append((key, list))
-        }
-        return result
     }
 
     var body: some View {
@@ -129,40 +139,28 @@ struct TripDetailView: View {
 
     private var listContent: some View {
         VStack(spacing: 0) {
-            viewModePicker
             if !groupsInTrip.isEmpty {
                 groupFilterBar
             }
             List {
-                if viewMode == .byLocation {
-                    ForEach(sectionedItems(by: \.location, source: itemsByLocation), id: \.0) { groupKey, groupItems in
-                        Section {
-                            ForEach(groupItems) { item in
-                                itemRow(item)
-                            }
-                            .onDelete { indexSet in
-                                for index in indexSet {
-                                    deleteItem(groupItems[index])
+                ForEach(categoryThenLocationSections, id: \.category) { category, locationGroups in
+                    Section {
+                        ForEach(locationGroups, id: \.location) { location, items in
+                            Section {
+                                ForEach(items) { item in
+                                    itemRow(item)
                                 }
-                            }
-                        } header: {
-                            sectionHeader(title: groupKey, icon: "map.fill")
-                        }
-                    }
-                } else {
-                    ForEach(sectionedItems(by: \.category, source: itemsByCategory), id: \.0) { groupKey, groupItems in
-                        Section {
-                            ForEach(groupItems) { item in
-                                itemRow(item)
-                            }
-                            .onDelete { indexSet in
-                                for index in indexSet {
-                                    deleteItem(groupItems[index])
+                                .onDelete { indexSet in
+                                    for index in indexSet {
+                                        deleteItem(items[index])
+                                    }
                                 }
+                            } header: {
+                                sectionHeader(title: location, icon: "mappin")
                             }
-                        } header: {
-                            sectionHeader(title: groupKey, icon: "list.bullet")
                         }
+                    } header: {
+                        sectionHeader(title: category, icon: "list.bullet")
                     }
                 }
             }
@@ -178,19 +176,6 @@ struct TripDetailView: View {
             Text(title)
                 .font(.headline)
         }
-    }
-
-    private var viewModePicker: some View {
-        Picker("View", selection: $viewMode) {
-            Label("By Location", systemImage: "map.fill")
-                .tag(TripDetailViewMode.byLocation)
-            Label("By Category", systemImage: "list.bullet")
-                .tag(TripDetailViewMode.byCategory)
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemGroupedBackground))
     }
 
     private var groupFilterBar: some View {

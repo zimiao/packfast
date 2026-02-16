@@ -14,62 +14,50 @@ struct TripDetailView: View {
 
     @State private var showingAddItem = false
     @State private var itemToEdit: Item?
-    /// When set, only items in this group are shown. Nil = show all.
+    /// Pack time filter. Nil = All.
     @State private var filterGroup: String?
+    /// Location filter. Nil = All.
+    @State private var filterLocation: String?
 
     private var filteredItems: [Item] {
-        guard let g = filterGroup, !g.isEmpty else { return trip.items }
-        return trip.items.filter { $0.group == g }
+        var items = trip.items
+        if let g = filterGroup, !g.isEmpty {
+            items = items.filter { $0.group == g }
+        }
+        if let loc = filterLocation, !loc.isEmpty {
+            items = items.filter { $0.location == loc }
+        }
+        return items
     }
 
-    /// First tier: category. Second tier: location. Pack time is the filter (chips).
-    private var categoryThenLocationSections: [(category: String, locationGroups: [(location: String, items: [Item])])] {
+    /// Categories with their items (flat list; pack time and location are filters only).
+    private var categorySections: [(category: String, items: [Item])] {
         let byCategory = Dictionary(grouping: filteredItems) { $0.category }
         let categoryOrder = categories.map(\.name).filter { byCategory[$0] != nil }
-        var result: [(category: String, locationGroups: [(location: String, items: [Item])])] = []
+        var result: [(category: String, items: [Item])] = []
         for cat in categoryOrder {
-            guard let catItems = byCategory[cat] else { continue }
-            let byLocation = Dictionary(grouping: catItems) { $0.location }
-            let locationOrder = locations.map(\.name).filter { byLocation[$0] != nil }
-            var groups: [(location: String, items: [Item])] = []
-            for loc in locationOrder {
-                guard var items = byLocation[loc] else { continue }
-                items.sort { !$0.isPacked && $1.isPacked }
-                groups.append((loc, items))
-            }
-            let otherLocs = Set(byLocation.keys).subtracting(locationOrder)
-            for loc in otherLocs.sorted() {
-                guard var items = byLocation[loc] else { continue }
-                items.sort { !$0.isPacked && $1.isPacked }
-                groups.append((loc, items))
-            }
-            result.append((cat, groups))
+            guard var items = byCategory[cat] else { continue }
+            items.sort { !$0.isPacked && $1.isPacked }
+            result.append((cat, items))
         }
-        let otherCats = Set(byCategory.keys).subtracting(categoryOrder)
-        for cat in otherCats.sorted() {
-            guard let catItems = byCategory[cat] else { continue }
-            let byLocation = Dictionary(grouping: catItems) { $0.location }
-            let locationOrder = locations.map(\.name).filter { byLocation[$0] != nil }
-            var groups: [(location: String, items: [Item])] = []
-            for loc in locationOrder {
-                guard var items = byLocation[loc] else { continue }
-                items.sort { !$0.isPacked && $1.isPacked }
-                groups.append((loc, items))
-            }
-            for loc in Set(byLocation.keys).subtracting(locationOrder).sorted() {
-                guard var items = byLocation[loc] else { continue }
-                items.sort { !$0.isPacked && $1.isPacked }
-                groups.append((loc, items))
-            }
-            result.append((cat, groups))
+        for cat in Set(byCategory.keys).subtracting(categoryOrder).sorted() {
+            guard var items = byCategory[cat] else { continue }
+            items.sort { !$0.isPacked && $1.isPacked }
+            result.append((cat, items))
         }
         return result
     }
 
-    /// Pack time presets that appear in this trip (for filter chips), in fixed order.
+    /// Pack time options that appear in this trip (for filter chips).
     private var groupsInTrip: [String] {
         let inTrip = Set(trip.items.map(\.group))
         return Item.packTimeOptions.filter { inTrip.contains($0) }
+    }
+
+    /// Locations that appear in this trip (for filter chips), in settings order.
+    private var locationsInTrip: [String] {
+        let inTrip = Set(trip.items.map(\.location))
+        return locations.map(\.name).filter { inTrip.contains($0) }
     }
 
     var body: some View {
@@ -142,21 +130,18 @@ struct TripDetailView: View {
             if !groupsInTrip.isEmpty {
                 groupFilterBar
             }
+            if !locationsInTrip.isEmpty {
+                locationFilterBar
+            }
             List {
-                ForEach(categoryThenLocationSections, id: \.category) { category, locationGroups in
+                ForEach(categorySections, id: \.category) { category, items in
                     Section {
-                        ForEach(locationGroups, id: \.location) { location, items in
-                            Section {
-                                ForEach(items) { item in
-                                    itemRow(item)
-                                }
-                                .onDelete { indexSet in
-                                    for index in indexSet {
-                                        deleteItem(items[index])
-                                    }
-                                }
-                            } header: {
-                                sectionHeader(title: location, icon: "mappin")
+                        ForEach(items) { item in
+                            itemRow(item)
+                        }
+                        .onDelete { indexSet in
+                            for index in indexSet {
+                                deleteItem(items[index])
                             }
                         }
                     } header: {
@@ -169,35 +154,55 @@ struct TripDetailView: View {
     }
 
     private func sectionHeader(title: String, icon: String) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.subheadline)
+                .font(.body)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.headline)
+                .font(.title3)
+                .fontWeight(.bold)
         }
     }
 
     private var groupFilterBar: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Pack time")
-                .font(.subheadline)
-                .fontWeight(.medium)
+        filterBar(title: "Pack time") {
+            GroupFilterChip(title: "All", isSelected: filterGroup == nil) {
+                filterGroup = nil
+            }
+            ForEach(groupsInTrip, id: \.self) { groupName in
+                GroupFilterChip(title: groupName, isSelected: filterGroup == groupName) {
+                    filterGroup = groupName
+                }
+            }
+        }
+    }
+
+    private var locationFilterBar: some View {
+        filterBar(title: "Location") {
+            GroupFilterChip(title: "All", isSelected: filterLocation == nil) {
+                filterLocation = nil
+            }
+            ForEach(locationsInTrip, id: \.self) { locName in
+                GroupFilterChip(title: locName, isSelected: filterLocation == locName) {
+                    filterLocation = locName
+                }
+            }
+        }
+    }
+
+    private func filterBar<Content: View>(title: String, @ViewBuilder chips: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    GroupFilterChip(title: "All", isSelected: filterGroup == nil) {
-                        filterGroup = nil
-                    }
-                    ForEach(groupsInTrip, id: \.self) { groupName in
-                        GroupFilterChip(title: groupName, isSelected: filterGroup == groupName) {
-                            filterGroup = groupName
-                        }
-                    }
+                HStack(spacing: 10) {
+                    chips()
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.vertical, 10)
             }
         }
         .background(Color(.tertiarySystemGroupedBackground))
@@ -216,11 +221,12 @@ struct TripDetailView: View {
                     
                     HStack(spacing: 8) {
                         Text(item.name)
+                            .font(.body)
                             .strikethrough(item.isPacked, color: .secondary)
                             .foregroundStyle(item.isPacked ? .secondary : .primary)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -287,11 +293,11 @@ struct GroupFilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
+                .font(.body)
                 .fontWeight(isSelected ? .semibold : .regular)
                 .foregroundStyle(isSelected ? .primary : .secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
                 .background(isSelected ? Color(.secondarySystemFill) : Color.clear)
                 .clipShape(Capsule())
         }

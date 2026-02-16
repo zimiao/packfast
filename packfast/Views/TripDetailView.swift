@@ -135,20 +135,50 @@ struct TripDetailView: View {
             if !groupsInTrip.isEmpty {
                 groupFilterBar
             }
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    if viewMode == .byLocation {
-                        ForEach(sectionedItems(by: \.location, source: itemsByLocation), id: \.0) { groupKey, groupItems in
-                            itemSection(header: groupKey, icon: "map.fill", items: groupItems)
+            List {
+                if viewMode == .byLocation {
+                    ForEach(sectionedItems(by: \.location, source: itemsByLocation), id: \.0) { groupKey, groupItems in
+                        Section {
+                            ForEach(groupItems) { item in
+                                itemRow(item)
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    deleteItem(groupItems[index])
+                                }
+                            }
+                        } header: {
+                            sectionHeader(title: groupKey, icon: "map.fill")
                         }
-                    } else {
-                        ForEach(sectionedItems(by: \.category, source: itemsByCategory), id: \.0) { groupKey, groupItems in
-                            itemSection(header: groupKey, icon: "list.bullet", items: groupItems)
+                    }
+                } else {
+                    ForEach(sectionedItems(by: \.category, source: itemsByCategory), id: \.0) { groupKey, groupItems in
+                        Section {
+                            ForEach(groupItems) { item in
+                                itemRow(item)
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    deleteItem(groupItems[index])
+                                }
+                            }
+                        } header: {
+                            sectionHeader(title: groupKey, icon: "list.bullet")
                         }
                     }
                 }
-                .padding()
             }
+            .listStyle(.insetGrouped)
+        }
+    }
+
+    private func sectionHeader(title: String, icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.headline)
         }
     }
 
@@ -188,25 +218,6 @@ struct TripDetailView: View {
             }
         }
         .background(Color(.tertiarySystemGroupedBackground))
-    }
-
-    private func itemSection(header: String, icon: String, items: [Item]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(header)
-                    .font(.headline)
-            }
-
-            VStack(spacing: 0) {
-                ForEach(items) { item in
-                    itemRow(item)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
     }
 
     private func itemRow(_ item: Item) -> some View {
@@ -252,13 +263,6 @@ struct TripDetailView: View {
                 duplicateItem(item)
             } label: {
                 Label("Duplicate", systemImage: "doc.on.doc")
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                deleteItem(item)
-            } label: {
-                Label("Delete", systemImage: "trash")
             }
         }
     }

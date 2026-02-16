@@ -97,7 +97,6 @@ struct TripListView: View {
             Form {
                 Section("Trip name") {
                     TextField("Trip name", text: $newTripName)
-                        .textInputAutocapitalization(.words)
                 }
                 if !trips.isEmpty {
                     Section {

@@ -52,7 +52,6 @@ struct AddEditItemView: View {
             Form {
                 Section("Item") {
                     TextField("Name", text: $name)
-                        .textInputAutocapitalization(.words)
                 }
 
                 Section {
@@ -139,7 +138,6 @@ struct AddEditItemView: View {
             }
             .alert("New Category", isPresented: $showAddCategoryAlert) {
                 TextField("Category name", text: $newCategoryName)
-                    .textInputAutocapitalization(.words)
                 Button("Cancel", role: .cancel) {
                     newCategoryName = ""
                 }
@@ -152,7 +150,6 @@ struct AddEditItemView: View {
             }
             .alert("New Location", isPresented: $showAddLocationAlert) {
                 TextField("Location name", text: $newLocationName)
-                    .textInputAutocapitalization(.words)
                 Button("Cancel", role: .cancel) {
                     newLocationName = ""
                 }
@@ -165,7 +162,6 @@ struct AddEditItemView: View {
             }
             .alert("New Pack time", isPresented: $showAddGroupAlert) {
                 TextField("Pack time name", text: $newGroupName)
-                    .textInputAutocapitalization(.words)
                 Button("Cancel", role: .cancel) {
                     newGroupName = ""
                 }

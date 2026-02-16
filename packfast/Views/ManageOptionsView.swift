@@ -79,7 +79,6 @@ struct ManageOptionsView: View {
         }
         .alert("New \(optionType.singularTitle)", isPresented: $showAddAlert) {
             TextField("Name", text: $newName)
-                .textInputAutocapitalization(.words)
             Button("Cancel", role: .cancel) { newName = "" }
             Button("Add") {
                 addNew()

@@ -121,6 +121,7 @@ struct TripListView: View {
 
     private func duplicateTrip(_ source: Trip) {
         let newTrip = Trip(name: "Copy of \(source.name)")
+        modelContext.insert(newTrip)
         for item in source.items {
             let copy = Item(
                 name: item.name,
@@ -132,7 +133,6 @@ struct TripListView: View {
             modelContext.insert(copy)
             newTrip.items.append(copy)
         }
-        modelContext.insert(newTrip)
         try? modelContext.save()
     }
 

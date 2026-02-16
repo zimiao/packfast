@@ -13,7 +13,8 @@ struct packfastApp: App {
             Trip.self,
             Item.self,
             PackingCategory.self,
-            PackingLocation.self
+            PackingLocation.self,
+            PackingGroup.self
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: false)
         return try! ModelContainer(for: schema, configurations: [config])

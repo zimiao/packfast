@@ -20,13 +20,28 @@ struct TripDetailView: View {
     @State private var viewMode: TripDetailViewMode = .byLocation
     @State private var showingAddItem = false
     @State private var itemToEdit: Item?
+    /// When set, only items in this group are shown. Nil = show all.
+    @State private var filterGroup: String?
+
+    private var filteredItems: [Item] {
+        guard let g = filterGroup, !g.isEmpty else { return trip.items }
+        return trip.items.filter { $0.group == g }
+    }
 
     private var itemsByLocation: [String: [Item]] {
-        Dictionary(grouping: trip.items) { $0.location }
+        Dictionary(grouping: filteredItems) { $0.location }
     }
 
     private var itemsByCategory: [String: [Item]] {
-        Dictionary(grouping: trip.items) { $0.category }
+        Dictionary(grouping: filteredItems) { $0.category }
+    }
+
+    /// Groups that appear in this trip (for filter chips).
+    private var groupsInTrip: [String] {
+        let names = Set(trip.items.compactMap { item in
+            item.group.isEmpty ? nil : item.group
+        })
+        return names.sorted()
     }
 
     /// Sections ordered: unpacked first, then packed (within each group).
@@ -64,18 +79,27 @@ struct TripDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     itemToEdit = nil
-                    showingAddItem = true
+                    Task { @MainActor in
+                        showingAddItem = true
+                    }
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
                 }
+                .buttonStyle(.borderless)
             }
         }
         .sheet(isPresented: $showingAddItem) {
-            AddEditItemView(trip: trip, item: itemToEdit, onDismiss: {
-                showingAddItem = false
-                itemToEdit = nil
-            })
+            AddEditItemView(
+                trip: trip,
+                item: itemToEdit,
+                categories: categories,
+                locations: locations,
+                onDismiss: {
+                    showingAddItem = false
+                    itemToEdit = nil
+                }
+            )
         }
     }
 
@@ -96,7 +120,9 @@ struct TripDetailView: View {
     private var listContent: some View {
         VStack(spacing: 0) {
             viewModePicker
-
+            if !groupsInTrip.isEmpty {
+                groupFilterBar
+            }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     if viewMode == .byLocation {
@@ -125,6 +151,24 @@ struct TripDetailView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.secondarySystemGroupedBackground))
+    }
+
+    private var groupFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                GroupFilterChip(title: "All", isSelected: filterGroup == nil) {
+                    filterGroup = nil
+                }
+                ForEach(groupsInTrip, id: \.self) { groupName in
+                    GroupFilterChip(title: groupName, isSelected: filterGroup == groupName) {
+                        filterGroup = groupName
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+        .background(Color(.tertiarySystemGroupedBackground))
     }
 
     private func itemSection(header: String, icon: String, items: [Item]) -> some View {
@@ -159,9 +203,21 @@ struct TripDetailView: View {
 
             Button {
                 itemToEdit = item
-                showingAddItem = true
+                Task { @MainActor in
+                    showingAddItem = true
+                }
             } label: {
-                HStack {
+                HStack(spacing: 8) {
+                    if !item.group.isEmpty {
+                        Text(item.group)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(.tertiarySystemFill))
+                            .clipShape(Capsule())
+                    }
                     Text(item.name)
                         .strikethrough(item.isPacked, color: .secondary)
                         .foregroundStyle(item.isPacked ? .secondary : .primary)
@@ -198,9 +254,29 @@ struct TripDetailView: View {
     }
 }
 
+struct GroupFilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundStyle(isSelected ? .primary : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color(.secondarySystemFill) : Color.clear)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 #Preview {
     NavigationStack {
         TripDetailView(trip: Trip(name: "Weekend Trip"))
-            .modelContainer(for: [Trip.self, Item.self, PackingCategory.self, PackingLocation.self], inMemory: true)
+            .modelContainer(for: [Trip.self, Item.self, PackingCategory.self, PackingLocation.self, PackingGroup.self], inMemory: true)
     }
 }

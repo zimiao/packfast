@@ -11,6 +11,7 @@ struct TripListView: View {
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @State private var showingNewTrip = false
     @State private var newTripName = ""
+    @State private var copyFromTripId: UUID?
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,7 @@ struct TripListView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         newTripName = ""
+                        copyFromTripId = nil
                         showingNewTrip = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -51,6 +53,7 @@ struct TripListView: View {
         } actions: {
             Button("Create Trip") {
                 newTripName = ""
+                copyFromTripId = nil
                 showingNewTrip = true
             }
             .buttonStyle(.borderedProminent)
@@ -88,8 +91,23 @@ struct TripListView: View {
     private var newTripSheet: some View {
         NavigationStack {
             Form {
-                TextField("Trip name", text: $newTripName)
-                    .textInputAutocapitalization(.words)
+                Section("Trip name") {
+                    TextField("Trip name", text: $newTripName)
+                        .textInputAutocapitalization(.words)
+                }
+                if !trips.isEmpty {
+                    Section {
+                        Picker("Copy items from", selection: $copyFromTripId) {
+                            Text("Start from scratch").tag(nil as UUID?)
+                            ForEach(trips) { trip in
+                                Text(trip.name).tag(trip.id as UUID?)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    } footer: {
+                        Text("Copying from a trip adds all its items with packed status reset—like starting fresh from a template.")
+                    }
+                }
             }
             .navigationTitle("New Trip")
             .navigationBarTitleDisplayMode(.inline)
@@ -115,8 +133,23 @@ struct TripListView: View {
         guard !name.isEmpty else { return }
         let trip = Trip(name: name)
         modelContext.insert(trip)
+        if let sourceId = copyFromTripId, let source = trips.first(where: { $0.id == sourceId }) {
+            for item in source.items {
+                let copy = Item(
+                    name: item.name,
+                    category: item.category,
+                    location: item.location,
+                    group: item.group,
+                    isPacked: false,
+                    trip: trip
+                )
+                modelContext.insert(copy)
+                trip.items.append(copy)
+            }
+        }
         try? modelContext.save()
         showingNewTrip = false
+        copyFromTripId = nil
     }
 
     private func duplicateTrip(_ source: Trip) {
@@ -127,6 +160,7 @@ struct TripListView: View {
                 name: item.name,
                 category: item.category,
                 location: item.location,
+                group: item.group,
                 isPacked: false,
                 trip: newTrip
             )
@@ -169,5 +203,5 @@ struct TripRowView: View {
 
 #Preview {
     TripListView()
-        .modelContainer(for: [Trip.self, Item.self, PackingCategory.self, PackingLocation.self], inMemory: true)
+        .modelContainer(for: [Trip.self, Item.self, PackingCategory.self, PackingLocation.self, PackingGroup.self], inMemory: true)
 }

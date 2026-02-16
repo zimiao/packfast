@@ -12,6 +12,8 @@ final class Item: Identifiable {
     var name: String
     var category: String
     var location: String
+    /// Optional sub-group (e.g. "Flora", "Clara", "Mine") for tiered categories like "Clothes – Flora".
+    var group: String
     var isPacked: Bool
     var trip: Trip?
 
@@ -20,6 +22,7 @@ final class Item: Identifiable {
         name: String,
         category: String,
         location: String,
+        group: String = "",
         isPacked: Bool = false,
         trip: Trip? = nil
     ) {
@@ -27,6 +30,7 @@ final class Item: Identifiable {
         self.name = name
         self.category = category
         self.location = location
+        self.group = group
         self.isPacked = isPacked
         self.trip = trip
     }
